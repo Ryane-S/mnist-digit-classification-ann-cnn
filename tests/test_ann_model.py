@@ -6,10 +6,12 @@ from ann_model import ann_model, cross_validation, prepare_data
 
 @pytest.fixture
 def small_mnist_dataset():
-    x_train = np.random.randint(0, 255, size=(10, 28, 28), dtype=np.uint8)
-    y_train = np.random.randint(0, 10, size=(10,))
-    x_test = np.random.randint(0, 255, size=(4, 28, 28), dtype=np.uint8)
-    y_test = np.random.randint(0, 10, size=(4,))
+    x_train = np.random.randint(0, 255, size=(30, 28, 28), dtype=np.uint8)
+    y_train = np.tile(np.arange(10), 3)
+
+    x_test = np.random.randint(0, 255, size=(10, 28, 28), dtype=np.uint8)
+    y_test = np.arange(10)
+
     return x_train, y_train, x_test, y_test
 
 
@@ -18,14 +20,14 @@ def test_prepare_data_shapes(small_mnist_dataset):
     x_train, y_train, x_test, y_test, num_pixels, num_classes = prepare_data(x_train, y_train, x_test, y_test)
 
     # Check shapes
-    assert x_train.shape == (10, 28 * 28)
-    assert x_test.shape == (4, 28 * 28)
-    assert y_train.shape == (10, num_classes)
-    assert y_test.shape == (4, num_classes)
+    assert x_train.shape == (30, 28 * 28)
+    assert x_test.shape == (10, 28 * 28)
+    assert y_train.shape == (30, 10)
+    assert y_test.shape == (10, 10)
 
     # Check normalization
-    assert np.all((x_train >= 0) and (x_train <= 1))
-    assert np.all((x_test >= 0) and (x_test <= 1))
+    assert np.all((x_train >= 0) & (x_train <= 1))
+    assert np.all((x_test >= 0) & (x_test <= 1))
 
 
 def test_ann_model_prediction():
@@ -42,8 +44,7 @@ def test_cross_validation_runs(small_mnist_dataset):
     x_train, y_train, x_test, y_test = small_mnist_dataset
     x_train, y_train, x_test, y_test, num_pixels, num_classes = prepare_data(x_train, y_train, x_test, y_test)
 
-    model = ann_model(num_pixels, num_classes)
-    histories, accuracy_scores = cross_validation(x_train, y_train, x_test, y_test, model)
+    histories, accuracy_scores = cross_validation(x_train, y_train, x_test, y_test, num_pixels, num_classes)
 
     assert len(histories) > 0
     assert len(accuracy_scores) > 0

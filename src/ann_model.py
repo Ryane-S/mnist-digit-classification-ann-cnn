@@ -21,7 +21,7 @@ def prepare_data(x_train:np.ndarray, y_train:np.ndarray, x_test:np.ndarray, y_te
     # Transform the classes labels into a binary matrix
     y_train = keras.utils.to_categorical(y_train)
     y_test = keras.utils.to_categorical(y_test)
-    num_classes = y_test.shape[1]
+    num_classes = y_train.shape[1]
 
     return x_train, y_train, x_test, y_test, num_pixels, num_classes
 
@@ -50,7 +50,7 @@ def ann_model(num_pixels:int, num_classes:int) -> keras.models.Sequential:
     return model
 
 
-def cross_validation(x_train:np.ndarray, y_train:np.ndarray, x_test:np.ndarray, y_test:np.ndarray, model:keras.models.Sequential) -> tuple[list, list] :
+def cross_validation(x_train:np.ndarray, y_train:np.ndarray, x_test:np.ndarray, y_test:np.ndarray, num_pixels:int, num_classes:int) -> tuple[list, list] :
     """Train and evaluate the model using k-fold cross-validation."""
     k_folds = 5
     histories, accuracy_scores = [], []
@@ -64,6 +64,9 @@ def cross_validation(x_train:np.ndarray, y_train:np.ndarray, x_test:np.ndarray, 
         y_train_i = y_train[train_idx] 
         x_val_i = x_train[val_idx] 
         y_val_i = y_train[val_idx]
+
+        # Build the model architecture
+        model = ann_model(num_pixels, num_classes)
 
         # Fit the model
         history = model.fit(x_train_i, y_train_i, epochs=5, batch_size=32, validation_data= (x_val_i, y_val_i), verbose=1)
@@ -106,11 +109,8 @@ def main():
     # Preprocess the data
     x_train, y_train, x_test, y_test, num_pixels, num_classes = prepare_data(x_train, y_train, x_test, y_test)
 
-    # Build the model architecture
-    model = ann_model(num_pixels, num_classes)
-
     # Train the model and evaluate it throught the cross validation method
-    histories, accuracy_scores = cross_validation(x_train, y_train, x_test, y_test, model)
+    histories, accuracy_scores = cross_validation(x_train, y_train, x_test, y_test, num_pixels, num_classes)
 
     # Display system performance
     display_learning_curves(histories, accuracy_scores)
