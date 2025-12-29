@@ -1,0 +1,20 @@
+[lint]
+ignore = [
+"E501",
+]
+
+select = [
+"D", # pydocstyle (docstring styling)
+"E", # pycodestyle (styling)
+"F", # PyFlakes (linting)
+"UP", # pyupgrade (rules about syntax upgrades)
+"B", # flake8-bugbear (common bugs from Python traps)
+"SIM", # flake8-simplify (simplifying expressions)
+"I", # isort (sorting import statements)
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[lint.pydocstyle]
+convention = "pep257"
