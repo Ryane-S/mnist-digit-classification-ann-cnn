@@ -31,9 +31,11 @@ def ann_model(num_pixels:int, num_classes:int) -> keras.models.Sequential:
     # Initialize the model
     model = keras.models.Sequential()
 
+    # Define model input shape
+    model.add(keras.layers.Input(shape=(num_pixels,)))
+
     # Add a hidden dense layer with 8 neurons
     model.add(keras.layers.Dense(units=8,
-                                 input_dim=num_pixels,
                                  kernel_initializer='normal',
                                  activation='relu'))
     
