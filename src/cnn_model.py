@@ -31,9 +31,11 @@ def cnn_model(input_shape:tuple[int, int, int], num_classes:int) -> keras.models
     # Initialize the model
     model = keras.models.Sequential()
 
+    # Define model input shape
+    model.add(keras.layers.Input(shape=input_shape))
+
     # Add a convolutionnal layer with 30 filters of size 5x5
     model.add(keras.layers.Conv2D(filters=30,
-                                 input_shape=input_shape,
                                  kernel_size=(5,5),
                                  activation='relu'))
     
