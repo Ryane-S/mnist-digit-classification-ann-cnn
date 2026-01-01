@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from cnn_model import cnn_model, cross_validation, prepare_data
+from cnn_model import cnn_model, cross_validation, evaluate_on_test, prepare_data
 
 
 @pytest.fixture
@@ -19,13 +19,11 @@ def test_prepare_data_shapes(small_mnist_dataset):
     x_train, y_train, x_test, y_test = small_mnist_dataset
     x_train, y_train, x_test, y_test, input_shape, num_classes = prepare_data(x_train, y_train, x_test, y_test)
 
-    # Check shapes
     assert x_train.shape == (30, 28, 28, 1)
     assert x_test.shape == (10, 28, 28, 1)
     assert y_train.shape == (30, 10)
     assert y_test.shape == (10, 10)
 
-    # Check normalization
     assert np.all((x_train >= 0) & (x_train <= 1))
     assert np.all((x_test >= 0) & (x_test <= 1))
 
@@ -44,8 +42,16 @@ def test_cross_validation_runs(small_mnist_dataset):
     x_train, y_train, x_test, y_test = small_mnist_dataset
     x_train, y_train, x_test, y_test, input_shape, num_classes = prepare_data(x_train, y_train, x_test, y_test)
 
-    histories, accuracy_scores = cross_validation(x_train, y_train, x_test, y_test, input_shape, num_classes)
+    histories = cross_validation(x_train, y_train, input_shape, num_classes)
 
     assert len(histories) > 0
-    assert len(accuracy_scores) > 0
-    assert all(0 <= accuracy <= 1 for accuracy in accuracy_scores)
+
+
+def test_evaluation_on_test(small_mnist_dataset):
+    x_train, y_train, x_test, y_test = small_mnist_dataset
+    x_train, y_train, x_test, y_test, num_pixels, num_classes = prepare_data(x_train, y_train, x_test, y_test)
+
+    accuracy = evaluate_on_test(x_train, y_train, x_test, y_test, num_pixels, num_classes)
+
+    assert isinstance(accuracy, float)
+    assert 0 <= accuracy <= 1
