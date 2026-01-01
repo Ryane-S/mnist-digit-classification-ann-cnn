@@ -52,10 +52,10 @@ def ann_model(num_pixels:int, num_classes:int) -> keras.models.Sequential:
     return model
 
 
-def cross_validation(x_train:np.ndarray, y_train:np.ndarray, x_test:np.ndarray, y_test:np.ndarray, num_pixels:int, num_classes:int) -> tuple[list, list] :
-    """Train and evaluate the model using k-fold cross-validation."""
+def cross_validation(x_train:np.ndarray, y_train:np.ndarray, num_pixels:int, num_classes:int) -> tuple[list, list] :
+    """Train and evaluate the model using k-fold cross-validation to assess model stability."""
     k_folds = 5
-    histories, accuracy_scores = [], []
+    histories = []
 
     # Prepare the cross validation datasets
     k_fold = KFold(n_splits=k_folds, shuffle=True, random_state=1)
@@ -76,31 +76,83 @@ def cross_validation(x_train:np.ndarray, y_train:np.ndarray, x_test:np.ndarray, 
         # Save the training related information in the histories list
         histories.append(history)
 
-        # Evaluate the model on the test dataset
-        scores = model.evaluate(x_test, y_test, verbose=0)
-
-        # Save the accuracy in the accuracyScores list
-        accuracy_scores.append(scores[1])
-
-    return histories, accuracy_scores
+    return histories
 
 
-def display_learning_curves(histories: list, accuracyScores: list) -> None:
-    """Display loss and accuracy curves for each cross-validation fold."""
-    for i in range(len(histories)):
-        # Plot loss
-        plt.subplot(211)
-        plt.title('Cross Entropy Loss')
-        plt.plot(histories[i].history['loss'], color='green', label='train')
-        plt.plot(histories[i].history['val_loss'], color='red', label='test')
+def display_learning_curves(histories: list) -> None:
+    """Plot mean training and validation curves over k-folds."""
+    n_epochs = len(histories[0].history["loss"])
+    epochs = range(1, n_epochs + 1)
 
-        # PLot accuracy
-        plt.subplot(212)
-        plt.title('Classification Accuracy')
-        plt.plot(histories[i].history['accuracy'], color='green', label='train')
-        plt.plot(histories[i].history['val_accuracy'], color='red', label='test')
+    train_loss = np.array([h.history["loss"] for h in histories])
+    val_loss = np.array([h.history["val_loss"] for h in histories])
+    train_acc = np.array([h.history["accuracy"] for h in histories])
+    val_acc = np.array([h.history["val_accuracy"] for h in histories])
 
+    # Mean and std
+    train_loss_mean, train_loss_std = train_loss.mean(axis=0), train_loss.std(axis=0)
+    val_loss_mean, val_loss_std = val_loss.mean(axis=0), val_loss.std(axis=0)
+    train_acc_mean, train_acc_std = train_acc.mean(axis=0), train_acc.std(axis=0)
+    val_acc_mean, val_acc_std = val_acc.mean(axis=0), val_acc.std(axis=0)
+
+    plt.figure(figsize=(10, 8))
+
+    # Plot loss
+    plt.subplot(2, 1, 1)
+    plt.title("Cross Entropy Loss")
+    plt.plot(epochs, train_loss_mean, label="Train")
+    plt.fill_between(
+        epochs,
+        train_loss_mean - train_loss_std,
+        train_loss_mean + train_loss_std,
+        alpha=0.2
+    )
+    plt.plot(epochs, val_loss_mean, label="Validation")
+    plt.fill_between(
+        epochs,
+        val_loss_mean - val_loss_std,
+        val_loss_mean + val_loss_std,
+        alpha=0.2
+    )
+    plt.legend()
+
+    # Plot accuracy
+    plt.subplot(2, 1, 2)
+    plt.title("Classification Accuracy")
+    plt.plot(epochs, train_acc_mean, label="Train")
+    plt.fill_between(
+        epochs,
+        train_acc_mean - train_acc_std,
+        train_acc_mean + train_acc_std,
+        alpha=0.2
+    )
+    plt.plot(epochs, val_acc_mean, label="Validation")
+    plt.fill_between(
+        epochs,
+        val_acc_mean - val_acc_std,
+        val_acc_mean + val_acc_std,
+        alpha=0.2
+    )
+    plt.legend()
+
+    plt.xlabel("Epochs")
+    plt.tight_layout()
     plt.show()
+
+
+def evaluate_on_test(x_train: np.ndarray, y_train: np.ndarray, x_test: np.ndarray, y_test: np.ndarray, num_pixels:int, num_classes: int,) -> float:
+    """Train the ANN on the full training set and evaluate accuracy on the test set."""
+    # Build the model
+    model = ann_model(num_pixels, num_classes)
+
+    # Train on the full training dataset
+    model.fit(x_train, y_train, epochs=5, batch_size=32, verbose=1)
+
+    # Evaluate on the test dataset
+    scores = model.evaluate(x_test, y_test, verbose=0)
+
+    print(f"Test accuracy: {scores[1]:.4f}")
+    return scores[1]
 
 
 def main():
@@ -112,10 +164,11 @@ def main():
     x_train, y_train, x_test, y_test, num_pixels, num_classes = prepare_data(x_train, y_train, x_test, y_test)
 
     # Train the model and evaluate it throught the cross validation method
-    histories, accuracy_scores = cross_validation(x_train, y_train, x_test, y_test, num_pixels, num_classes)
+    histories = cross_validation(x_train, y_train, num_pixels, num_classes)
+    display_learning_curves(histories)
 
-    # Display system performance
-    display_learning_curves(histories, accuracy_scores)
+    # Final evaluation on test set
+    evaluate_on_test(x_train, y_train, x_test, y_test, num_pixels, num_classes)
 
 
 if __name__ == "__main__":
